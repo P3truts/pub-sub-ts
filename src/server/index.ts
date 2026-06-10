@@ -1,8 +1,9 @@
 import amqp from "amqplib";
 import process from "node:process";
-import { publishJSON } from "../internal/pubsub/publish.js";
-import { ExchangePerilDirect, PauseKey } from "../internal/routing/routing.js";
+import { declareAndBind, publishJSON, SimpleQueueType } from "../internal/pubsub/publish.js";
+import { ExchangePerilDirect, ExchangePerilTopic, PauseKey } from "../internal/routing/routing.js";
 import type { PlayingState } from "../internal/gamelogic/gamestate.js";
+import { getInput, printServerHelp } from "../internal/gamelogic/gamelogic.js";
 
 
 async function main() {
@@ -13,11 +14,32 @@ async function main() {
   try {
     const conn = await amqp.connect(connString);
     const channel = await conn.createConfirmChannel();
-    const playState: PlayingState = { isPaused: true };
-    const value = JSON.stringify(playState);
+    let playState: PlayingState = { isPaused: true };
+    let value = JSON.stringify(playState);
     publishJSON(channel, ExchangePerilDirect, PauseKey, value);
     if (conn) {
       console.log("Connection successful!");
+    }
+    const [chann, queue] = await declareAndBind(conn, ExchangePerilTopic, "game_logs", "game_logs.*", SimpleQueueType.Durable);
+    printServerHelp();
+    while (true) {
+      const words = await getInput();
+      if (words.length > 0) {
+        if (words[0] === "pause") {
+          console.log("We're sending a pause message!");
+          publishJSON(channel, ExchangePerilDirect, PauseKey, value);
+        } else if (words[0] === "resume") {
+          console.log("We're sending a resume message!");
+          playState = { isPaused: false };
+          value = JSON.stringify(playState);
+          publishJSON(channel, ExchangePerilDirect, PauseKey, value);
+        } else if (words[0] === "quit") {
+          console.log("We're exiting!");
+          process.exit(0);
+        } else {
+          console.log("Command not understood!");
+        }
+      }
     }
 
     process.on('exit', (code) => {
