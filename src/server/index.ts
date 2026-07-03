@@ -15,8 +15,8 @@ async function main() {
     const conn = await amqp.connect(connString);
     const channel = await conn.createConfirmChannel();
     let playState: PlayingState = { isPaused: true };
-    let value = JSON.stringify(playState);
-    publishJSON(channel, ExchangePerilDirect, PauseKey, value);
+    //let value = JSON.stringify(playState);
+    publishJSON(channel, ExchangePerilDirect, PauseKey, playState);
     if (conn) {
       console.log("Connection successful!");
     }
@@ -27,12 +27,12 @@ async function main() {
       if (words.length > 0) {
         if (words[0] === "pause") {
           console.log("We're sending a pause message!");
-          publishJSON(channel, ExchangePerilDirect, PauseKey, value);
+          playState = { isPaused: true };
+          await publishJSON(channel, ExchangePerilDirect, PauseKey, playState);
         } else if (words[0] === "resume") {
           console.log("We're sending a resume message!");
           playState = { isPaused: false };
-          value = JSON.stringify(playState);
-          publishJSON(channel, ExchangePerilDirect, PauseKey, value);
+          await publishJSON(channel, ExchangePerilDirect, PauseKey, playState);
         } else if (words[0] === "quit") {
           console.log("We're exiting!");
           process.exit(0);
