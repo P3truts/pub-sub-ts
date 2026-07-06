@@ -22,7 +22,7 @@ export async function declareAndBind(
 ): Promise<[Channel, amqp.Replies.AssertQueue]> {
     const channel = await conn.createChannel();
     const isDurable = queueType === SimpleQueueType.Durable ? true : false;
-    const queue = await channel.assertQueue(queueName, { durable: isDurable, autoDelete: !isDurable, exclusive: !isDurable });
+    const queue = await channel.assertQueue(queueName, { durable: isDurable, autoDelete: !isDurable, exclusive: !isDurable, arguments: { "x-dead-letter-exchange": "peril_dlx" } });
     channel.bindQueue(queueName, exchange, key);
 
     return [channel, queue];
