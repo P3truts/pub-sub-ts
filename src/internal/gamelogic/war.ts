@@ -33,20 +33,20 @@ export function unitsToPowerLevel(units: Unit[]): number {
 
 export type WarResolution =
   | {
-      result: WarOutcome.YouWon;
-      winner: string;
-      loser: string;
-    }
+    result: WarOutcome.YouWon;
+    winner: string;
+    loser: string;
+  }
   | {
-      result: WarOutcome.OpponentWon;
-      winner: string;
-      loser: string;
-    }
+    result: WarOutcome.OpponentWon;
+    winner: string;
+    loser: string;
+  }
   | {
-      result: WarOutcome.Draw;
-      attacker: string;
-      defender: string;
-    }
+    result: WarOutcome.Draw;
+    attacker: string;
+    defender: string;
+  }
   | { result: WarOutcome.NotInvolved }
   | { result: WarOutcome.NoUnits };
 

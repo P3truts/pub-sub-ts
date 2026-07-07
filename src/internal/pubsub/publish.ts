@@ -34,11 +34,11 @@ export async function subscribeJSON<T>(
     queueName: string,
     key: string,
     queueType: SimpleQueueType,
-    handler: (data: T) => AckType,
+    handler: (data: T, cc: ConfirmChannel) => Promise<AckType> | AckType,
 ): Promise<void> {
     //console.log("subscribing to queue...", queueName);
     const [channel, queue] = await declareAndBind(conn, exchange, queueName, key, queueType);
-    await channel.consume(queue.queue, (msg) => {
+    await channel.consume(queue.queue, async (msg) => {
         if (msg === null) {
             console.log("null message");
             return;
@@ -46,10 +46,11 @@ export async function subscribeJSON<T>(
 
         //console.log("received message", msg);
         const parsedMsg = JSON.parse(msg.content.toString());
-        //console.log("parsed message:");
-        //console.log(parsedMsg);
-        //console.log("end of parsed message");
-        var ackType: AckType = handler(parsedMsg);
+        console.log("parsed message:");
+        console.log(parsedMsg);
+        console.log("end of parsed message");
+        const confirmChann = await conn.createConfirmChannel()
+        const ackType: AckType = await handler(parsedMsg, confirmChann);
         if (ackType === AckType.Ack) {
             console.log("Ack");
             channel.ack(msg);

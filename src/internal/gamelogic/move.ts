@@ -1,4 +1,4 @@
-import { publishJSON } from "../pubsub/publish.js";
+import { publishJSON, subscribeJSON } from "../pubsub/publish.js";
 import {
   isValidLocation,
   type ArmyMove,
@@ -50,6 +50,7 @@ export function handleMove(gs: GameState, move: ArmyMove): MoveOutcome {
     console.log(
       `You have units in ${overlappingLocation}! You are at war with ${move.player.username}!`
     );
+
     console.log("------------------------");
     return MoveOutcome.MakeWar;
   }
