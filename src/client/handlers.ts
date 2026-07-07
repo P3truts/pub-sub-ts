@@ -29,11 +29,15 @@ export function handlerMove(gs: GameState): (am: ArmyMove, cc: ConfirmChannel) =
                 attacker: am.player,
                 defender: gs.getPlayerSnap()
             };
-            console.log("rw object is: ");
-            console.log(rw);
-            await publishJSON(cc, ExchangePerilTopic, `${WarRecognitionsPrefix}.${am.player.username}`, rw);
+            //console.log("rw object is: ");
+            //console.log(rw);
+            try {
 
-            return AckType.NackRequeue;
+                await publishJSON(cc, ExchangePerilTopic, `${WarRecognitionsPrefix}.${am.player.username}`, rw);
+            } catch {
+                return AckType.NackRequeue;
+            }
+            return AckType.Ack;
         } else {
             return AckType.NackDiscard;
         }
