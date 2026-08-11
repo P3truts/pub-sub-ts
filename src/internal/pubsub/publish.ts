@@ -1,5 +1,8 @@
 import type { Channel, ConfirmChannel } from "amqplib";
 import amqp from "amqplib";
+import { encode } from "@msgpack/msgpack";
+import { ExchangePerilTopic, GameLogSlug } from "../routing/routing.js";
+import type { GameLog } from "../gamelogic/logs.js";
 
 
 export async function publishJSON<T>(
@@ -62,6 +65,29 @@ export async function subscribeJSON<T>(
             channel.nack(msg, false, false);
         }
     })
+}
+
+export async function publishMsgPack<T>(
+    ch: ConfirmChannel,
+    exchange: string,
+    routingKey: string,
+    value: T,
+): Promise<void> {
+    const msgPack = encode(value);
+    const buffer = Buffer.from(msgPack);
+    ch.publish(exchange, routingKey, buffer, { "contentType": "application/x-msgpack" });
+}
+
+export async function publishGameLog(username: string, message: string,
+    channel: ConfirmChannel) {
+    const currentTime = new Date();
+    let gameLog: GameLog = {
+        username: username,
+        message: message,
+        currentTime: currentTime
+    };
+
+    await publishMsgPack(channel, ExchangePerilTopic, `${GameLogSlug}.${username}`, gameLog);
 }
 
 export enum SimpleQueueType {
