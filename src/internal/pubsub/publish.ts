@@ -46,6 +46,7 @@ export async function subscribeJSON<T>(
             console.log("null message");
             return;
         }
+        await channel.prefetch(1);
 
         //console.log("received message", msg);
         const parsedMsg = JSON.parse(msg.content.toString());
@@ -105,6 +106,7 @@ export async function subscribeMsgPack<T>(
             console.log("null message");
             return;
         }
+        await channel.prefetch(1);
 
         //console.log("received message", msg);
         const parsedMsg = decode(msg.content);
