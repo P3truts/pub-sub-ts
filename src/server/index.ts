@@ -1,9 +1,10 @@
 import amqp from "amqplib";
 import process from "node:process";
-import { declareAndBind, publishJSON, SimpleQueueType } from "../internal/pubsub/publish.js";
+import { declareAndBind, publishJSON, SimpleQueueType, subscribeMsgPack } from "../internal/pubsub/publish.js";
 import { ExchangePerilDirect, ExchangePerilTopic, PauseKey } from "../internal/routing/routing.js";
 import type { PlayingState } from "../internal/gamelogic/gamestate.js";
 import { getInput, printServerHelp } from "../internal/gamelogic/gamelogic.js";
+import { handlerlog } from "../client/handlers.js";
 
 
 async function main() {
@@ -21,6 +22,7 @@ async function main() {
       console.log("Connection successful!");
     }
     const [chann, queue] = await declareAndBind(conn, ExchangePerilTopic, "game_logs", "game_logs.*", SimpleQueueType.Durable);
+    await subscribeMsgPack(conn, ExchangePerilTopic, "game_logs", "game_logs.*", SimpleQueueType.Durable, handlerlog());
     printServerHelp();
     while (true) {
       const words = await getInput();

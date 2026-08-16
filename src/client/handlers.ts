@@ -1,8 +1,11 @@
 import type { ConfirmChannel } from "amqplib";
 import { channel } from "diagnostics_channel";
 import type { ArmyMove, RecognitionOfWar } from "../internal/gamelogic/gamedata.js";
+import { getInput } from "../internal/gamelogic/gamelogic.js";
 import type { PlayingState } from "../internal/gamelogic/gamestate.js";
 import { GameState } from "../internal/gamelogic/gamestate.js";
+import { writeLog } from "../internal/gamelogic/logs.js";
+import type { GameLog } from "../internal/gamelogic/logs.js";
 import { handleMove, MoveOutcome } from "../internal/gamelogic/move.js";
 import { handlePause } from "../internal/gamelogic/pause.js";
 import { handleWar, WarOutcome } from "../internal/gamelogic/war.js";
@@ -85,4 +88,16 @@ export function handlerWar(gs: GameState, channel: ConfirmChannel): (rw: Recogni
             return AckType.NackDiscard;
         }
     };
+}
+
+export function handlerlog(): (gl: GameLog) => Promise<AckType> {
+    return async (gl: GameLog) => {
+        try {
+            writeLog(gl);
+            getInput();
+            return AckType.Ack;
+        } catch {
+            return AckType.NackRequeue;
+        }
+    }
 }

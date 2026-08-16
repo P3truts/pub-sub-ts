@@ -1,6 +1,6 @@
 import type { Channel, ConfirmChannel } from "amqplib";
 import amqp from "amqplib";
-import { encode } from "@msgpack/msgpack";
+import { decode, encode } from "@msgpack/msgpack";
 import { ExchangePerilTopic, GameLogSlug } from "../routing/routing.js";
 import type { GameLog } from "../gamelogic/logs.js";
 
@@ -88,6 +88,41 @@ export async function publishGameLog(username: string, message: string,
     };
 
     await publishMsgPack(channel, ExchangePerilTopic, `${GameLogSlug}.${username}`, gameLog);
+}
+
+export async function subscribeMsgPack<T>(
+    conn: amqp.ChannelModel,
+    exchange: string,
+    queueName: string,
+    key: string,
+    queueType: SimpleQueueType,
+    handler: (data: T) => Promise<AckType> | AckType
+): Promise<void> {
+    //console.log("subscribing to queue...", queueName);
+    const [channel, queue] = await declareAndBind(conn, exchange, queueName, key, queueType);
+    await channel.consume(queue.queue, async (msg) => {
+        if (msg === null) {
+            console.log("null message");
+            return;
+        }
+
+        //console.log("received message", msg);
+        const parsedMsg = decode(msg.content);
+        console.log("parsed msg message:");
+        console.log(parsedMsg);
+        console.log("end of parsed message");
+        const ackType: AckType = await handler(parsedMsg);
+        if (ackType === AckType.Ack) {
+            console.log("Ack");
+            channel.ack(msg);
+        } else if (ackType === AckType.NackRequeue) {
+            console.log("NackRequeue");
+            channel.nack(msg, false, true);
+        } else {
+            console.log("NackDiscard");
+            channel.nack(msg, false, false);
+        }
+    })
 }
 
 export enum SimpleQueueType {
